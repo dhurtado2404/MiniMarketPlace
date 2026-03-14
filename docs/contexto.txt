@@ -1,0 +1,54 @@
+Contexto del TP (Backend): “Mini Mercado” — Marketplace API estilo Mercado Libre
+
+Vas a construir solo el backend de un marketplace estilo Mercado Libre usando Java 21 + Spring Boot + Maven. El sistema expone una API REST para que vendedores publiquen productos y compradores puedan comprar. Está pensado para que practiques problemas reales de backend: concurrencia en stock, idempotencia ante reintentos, procesos asíncronos (pagos/envíos simulados) y trazabilidad/auditoría.
+El frontend no forma parte del TP. Si más adelante sobra tiempo, se podrá hacer en otro proyecto/repositorio.
+
+Escenario de negocio
+La empresa MiniMercado permite que:
+Sellers creen y administren publicaciones (título, precio, stock).
+Buyers busquen publicaciones y realicen checkout con una lista de items.
+El pago se procesa con un proveedor externo (simulado) que confirma por webhook y puede fallar, tardar o enviar eventos duplicados.
+Una vez pagada la orden, se inicia un proceso de envío (simulado) con estados de tracking.
+
+Objetivo del sistema (qué debe lograr)
+
+Catálogo/Publicaciones
+CRUD básico de publicaciones.
+Búsqueda/listado con paginación simple.
+Stock consistente (nunca negativo).
+
+Compra (Checkout)
+Un buyer realiza compra directa (sin front): envía items {publicationId, quantity}.
+Se crea una Order con items, total y estado.
+El backend debe evitar overselling si dos compras compiten por el mismo stock.
+Pagos (simulado, asíncrono)
+Se crea un Payment intent para la order.
+El proveedor confirma/rechaza por webhook.
+El backend debe tolerar:
+reintentos del cliente (idempotencia),
+webhooks duplicados o tardíos (deduplicación).
+Envíos (simulado)
+Al aprobarse el pago, se crea un Shipment.
+Evoluciona por estados (tracking simple) y se puede consultar desde la order.
+Post-compra (mínimo)
+Cancelación de orden bajo reglas (por ejemplo: si no está pagada/enviada).
+
+Condiciones realistas que el TP debe contemplar
+Concurrencia: dos checkouts simultáneos por el último stock → solo uno debe concretarse.
+Idempotencia: si POST /orders se reintenta por timeout, no se deben generar órdenes duplicadas.
+Webhooks duplicados: el proveedor de pagos puede mandar el mismo evento más de una vez → se procesa una sola vez.
+Fallos externos: pagos/envíos pueden fallar → el sistema debe reflejar estado correcto y permitir reintentos controlados o estado terminal.
+
+Enfoque arquitectónico
+Se implementa como monolito modular (una sola app), dividido internamente por dominios (por ejemplo: catalog, orders, payments, shipping). Esto permite iterar rápido y, a futuro, extraer módulos a microservicios si quisieras.
+
+Entregable esperado (cómo se “aprueba” el TP)
+API REST funcional con persistencia (ideal Postgres + migraciones).
+Flujos completos demostrables con requests (ej. curl/Postman).
+Evidencia de resolución de:
+stock concurrente,
+idempotencia,
+asincronía con webhooks,
+estados y transiciones claras,
+tests en puntos críticos,
+documentación básica (README + OpenAPI).
