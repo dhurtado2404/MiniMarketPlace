@@ -1,0 +1,36 @@
+Pregunta 1 — Estructura de paquetes
+
+El TP dice "monolito modular dividido por dominios". ¿Cómo organizarías los paquetes internamente? ¿Qué dominios identificás y cómo los estructurarías dentro de
+com.example.miniMarketPlace?
+
+Me gustaría seguir una arquitectura hexagonal, puertos y adaptadores, tengo entendido que son 3 capas, modelo, aplicacion y puertos no?
+No sabría como estrcuturar las carpetas, pero haría de esa forma, despues dominios que identifico serían
+Sellers, Buyers, publicaciones, items, orden de compra, envio
+
+JPA vive en adapters/out porque es un detalle de infraestructura — tu dominio no debería saber si guardás en Postgres, MongoDB o un archivo de texto.
+
+El item va el atributo del precio actual -> Snapshot Pattern  capturás el estado de los datos en ese momento y lo guardás inmutablemente
+
+Pessimistic Lock (SELECT FOR UPDATE). Se bloquea el registro de la publicación al momento de leer el stock, evitando que dos transacciones simultáneas lean el
+mismo valor y generen overselling. Se libera al commit de la transacción.
+
+Idempotencia en POST /orders: el cliente envía un header Idempotency-Key (UUID). Se guarda como columna idempotency_key en la tabla orders con constraint unique. Si llega un
+  reintento con el mismo key, se devuelve la orden existente sin procesar nada.
+
+ Idempotencia significa: ejecutar la misma operación N veces produce el mismo resultado que ejecutarla una sola vez.
+
+Payment external_event_id para idempotencia cuando llegan webhooks.
+
+Enum de transiciones válidas en el mismo enum:
+
+ public enum OrderStatus {
+      PENDING, PAID, CANCELLED;
+
+      public void validateTransition(OrderStatus next) {
+          // PENDING → PAID ✅
+          // PENDING → CANCELLED ✅                                                                                                                                                  ─
+          // PAID → CANCELLED ❌                                               n
+          // etc.
+      }
+  }
+
