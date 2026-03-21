@@ -1,4 +1,6 @@
 package com.example.miniMarketPlace.users.domain;
 
-public class UserRole {
+public enum UserRole {
+    SELLER,
+    BUYER
 }
