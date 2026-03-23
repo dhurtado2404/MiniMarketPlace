@@ -4,6 +4,7 @@ import com.example.miniMarketPlace.users.domain.exceptions.UserNotFound;
 import com.example.miniMarketPlace.users.domain.exceptions.UsernameAlreadyExistsException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -42,5 +43,12 @@ public class UserService {
         userRepository.deleteById(user.getId());
     }
 
+    public User findUserById(Long id){
+        Optional<User> userSearch = userRepository.findById(id);
+        if (!userSearch.isPresent()) {
+            throw new UserNotFound("User not found");
+        }
+        return userSearch.get();
+    }
 
 }
